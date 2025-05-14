@@ -47,12 +47,4 @@
 - https://github.com/sirpdboy/openwrt/releases
 - https://github.com/esirplayground
 
-## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=wukongdaily/armbian-installer&type=Date)](https://star-history.com/#wukongdaily/armbian-installer&Date)
-
-
-
-## ❤️赞助作者 ⬇️⬇️
-#### 项目开发不易 感谢您的支持鼓励。<br>
-[![点击这里赞助我](https://img.shields.io/badge/点击这里赞助我-支持作者的项目-orange?logo=github)](https://wkdaily.cpolar.top/01) <br>
