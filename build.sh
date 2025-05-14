@@ -17,7 +17,7 @@ else
   FILE_NAME="Armbian_25.2.1_Uefi-x86_noble_current_6.12.13.img.xz"
 fi
 
-REPO="wukongdaily/armbian-installer"
+REPO="m2kall/armbian-installer"
 TAG="2025-03-12"
 OUTPUT_PATH="armbian/armbian.img.xz"
 
