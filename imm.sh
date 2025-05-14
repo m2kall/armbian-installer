@@ -2,7 +2,7 @@
 mkdir -p imm
 #https://github.com/m2kall/AutoBuildImmortalWrt/releases/download/Autobuild-x86-64/immortalwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img.gz
 
-REPO="wukongdaily/armbian-installer"
+REPO="m2kall/armbian-installer"
 TAG="2025-03-12"
 FILE_NAME="immortalwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img.gz"
 OUTPUT_PATH="imm/immortalwrt.img.gz"
