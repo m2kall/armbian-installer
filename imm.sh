@@ -1,6 +1,6 @@
 #!/bin/bash
 mkdir -p imm
-#https://github.com/wukongdaily/AutoBuildImmortalWrt/releases/download/Autobuild-x86-64/immortalwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img.gz
+#https://github.com/m2kall/AutoBuildImmortalWrt/releases/download/Autobuild-x86-64/immortalwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img.gz
 
 REPO="wukongdaily/armbian-installer"
 TAG="2025-03-12"
