@@ -18,7 +18,7 @@ else
 fi
 
 REPO="m2kall/armbian-installer"
-TAG="2025-03-12"
+TAG="2025-05-14"
 OUTPUT_PATH="armbian/armbian.img.xz"
 
 DOWNLOAD_URL=$(curl -s https://api.github.com/repos/$REPO/releases/tags/$TAG | jq -r '.assets[] | select(.name == "'"$FILE_NAME"'") | .browser_download_url')
