@@ -1,13 +1,14 @@
 #!/bin/bash
 # ===================================================================================
-# ImmortalWrt 智能安装脚本
+# ImmortalWrt 智能安装脚本 (优化版)
 #
 # 功能:
-# 1. 交互式选择目标磁盘。
+# 1. 交互式选择目标磁盘 (数字选择)。
 # 2. 自动创建 GPT 分区表 (EFI + ext4 主分区)。
 # 3. 将 /mnt/immortalwrt.img 镜像内容写入主分区。
 # 4. 安装 GRUB EFI 引导加载器，确保系统可从硬盘启动。
 # 5. 提供多重安全检查，防止误操作。
+# 6. 优化输出，提供更清晰的安装进度和指引。
 #
 # 作者: m2kall
 # ===================================================================================
@@ -40,62 +41,85 @@ function print_error() {
 # --- 主程序开始 ---
 
 print_info "欢迎使用 ImmortalWrt 智能安装脚本。"
+print_info "此脚本将引导您完成 ImmortalWrt 到本地硬盘的安装。"
+echo ""
 
 # 1. 检查源镜像文件是否存在
+print_info "步骤 1/7: 检查源镜像文件..."
 if [ ! -f "$SRC_IMG" ]; then
     print_error "安装失败：未在 $SRC_IMG 找到源镜像文件。"
     print_error "请确保构建脚本已将 immortalwrt.img 正确放置到 /mnt/ 目录下。"
     exit 1
 fi
-print_info "检测到源镜像文件: $SRC_IMG"
-
-# 2. 选择目标磁盘
-print_info "正在检测可用磁盘..."
-lsblk -d -o NAME,SIZE,MODEL
+print_success "源镜像文件 $SRC_IMG 已找到。"
 echo ""
-read -p "请输入您要安装 ImmortalWrt 的目标磁盘名称 (例如: sda, nvme0n1, mmcblk0): " TARGET_DISK
 
-# 检查输入是否为空
-if [ -z "$TARGET_DISK" ]; then
-    print_error "未输入磁盘名称，安装已取消。"
+# 2. 选择目标磁盘 (交互式数字选择)
+print_info "步骤 2/7: 选择目标磁盘..."
+echo "以下是当前系统检测到的可用磁盘："
+echo "-------------------------------------------------------------------"
+lsblk -d -o NAME,SIZE,MODEL | awk 'NR>1 {print NR-1 ") " $0}'
+echo "-------------------------------------------------------------------"
+echo ""
+
+DISKS=($(lsblk -d -o NAME | awk 'NR>1 {print $1}'))
+NUM_DISKS=${#DISKS[@]}
+
+if [ "$NUM_DISKS" -eq 0 ]; then
+    print_error "未检测到任何可用磁盘。请检查硬件连接。"
     exit 1
 fi
 
+SELECTED_INDEX=-1
+while true; do
+    read -p "请输入您要安装 ImmortalWrt 的磁盘编号 (1-$NUM_DISKS): " CHOICE
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "$NUM_DISKS" ]; then
+        SELECTED_INDEX=$((CHOICE - 1))
+        break
+    else
+        print_warning "无效的输入。请输入一个有效的磁盘编号。"
+    fi
+done
+
+TARGET_DISK=${DISKS[$SELECTED_INDEX]}
 TARGET_DEVICE="/dev/${TARGET_DISK}"
 
-# 检查设备是否存在
-if [ ! -b "$TARGET_DEVICE" ]; then
-    print_error "设备 $TARGET_DEVICE 不存在，请检查您输入的名称是否正确。"
-    exit 1
-fi
+print_info "您选择了磁盘: $TARGET_DEVICE ($(lsblk -d -o SIZE,MODEL ${TARGET_DEVICE} | awk 'NR>1 {print $1, $2}'))"
+echo ""
 
 # 3. 安全确认
 print_warning "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 警告 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 print_warning "接下来的操作将完全擦除磁盘 '$TARGET_DEVICE' 上的所有数据。"
 print_warning "此操作不可逆！请在继续前备份所有重要数据。"
 print_warning "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-read -p "如果您确定要继续，请输入 'YES': " CONFIRMATION
+echo ""
+read -p "如果您确定要继续，请输入 'YES' (大写): " CONFIRMATION
 
 if [ "$CONFIRMATION" != "YES" ]; then
-    print_info "安装已取消。"
+    print_info "安装已取消。再见！"
     exit 0
 fi
 
-print_info "用户已确认，开始在 $TARGET_DEVICE 上安装 ImmortalWrt..."
+print_info "用户已确认。开始在 $TARGET_DEVICE 上安装 ImmortalWrt..."
+echo ""
 
 # 4. 卸载可能已挂载的分区
-print_info "正在卸载目标磁盘上的所有分区..."
+print_info "步骤 3/7: 卸载目标磁盘上的所有分区..."
 umount ${TARGET_DEVICE}* 2>/dev/null || true
+print_success "已尝试卸载所有相关分区。"
+echo ""
 
 # 5. 创建分区表和分区
-print_info "正在创建 GPT 分区表和分区..."
+print_info "步骤 4/7: 创建 GPT 分区表和分区..."
 parted --script "${TARGET_DEVICE}" -- \
     mklabel gpt \
     mkpart "EFI System Partition" fat32 1MiB 513MiB \
     set 1 esp on \
     mkpart "rootfs" ext4 513MiB 100%
+print_success "GPT 分区表和分区已创建。"
 
 # 等待内核识别新分区
+print_info "等待内核识别新分区..."
 partprobe "${TARGET_DEVICE}"
 sleep 2
 
@@ -110,30 +134,37 @@ fi
 
 print_info "EFI 分区: $EFI_PART"
 print_info "根分区: $ROOT_PART"
+echo ""
 
 # 6. 格式化分区
-print_info "正在格式化分区..."
-mkfs.vfat -F 32 "${EFI_PART}"
-mkfs.ext4 -F "${ROOT_PART}"
+print_info "步骤 5/7: 格式化分区..."
+mkfs.vfat -F 32 "${EFI_PART}" || print_error "格式化 EFI 分区失败！"
+mkfs.ext4 -F "${ROOT_PART}" || print_error "格式化根分区失败！"
+print_success "分区已格式化。"
+echo ""
 
 # 7. 写入镜像文件
-print_info "正在将 $SRC_IMG 写入到 $ROOT_PART..."
-dd if="$SRC_IMG" of="$ROOT_PART" bs=4M status=progress
+print_info "步骤 6/7: 正在将 ImmortalWrt 镜像写入到根分区..."
+print_info "这可能需要一些时间，请耐心等待..."
+dd if="$SRC_IMG" of="$ROOT_PART" bs=4M status=progress || print_error "写入镜像失败！"
+print_success "ImmortalWrt 镜像已成功写入根分区。"
+echo ""
 
 # 8. 安装引导加载器 (GRUB)
-print_info "正在安装 GRUB EFI 引导加载器..."
+print_info "步骤 7/7: 安装 GRUB EFI 引导加载器..."
 mkdir -p "${MOUNT_POINT}"
-mount "${ROOT_PART}" "${MOUNT_POINT}"
+mount "${ROOT_PART}" "${MOUNT_POINT}" || print_error "挂载根分区失败！"
 mkdir -p "${MOUNT_POINT}/boot/efi"
-mount "${EFI_PART}" "${MOUNT_POINT}/boot/efi"
+mount "${EFI_PART}" "${MOUNT_POINT}/boot/efi" || print_error "挂载 EFI 分区失败！"
 
 # 使用 --removable 选项可以提高兼容性
-grub-install --target=x86_64-efi --boot-directory="${MOUNT_POINT}/boot" --efi-directory="${MOUNT_POINT}/boot/efi" --removable
+grub-install --target=x86_64-efi --boot-directory="${MOUNT_POINT}/boot" --efi-directory="${MOUNT_POINT}/boot/efi" --removable || print_error "GRUB 安装失败！"
+print_success "GRUB 引导加载器已安装。"
 
 # 9. 创建 GRUB 配置文件
 print_info "正在生成 GRUB 配置文件 (grub.cfg)..."
 # 通过 blkid 获取新根分区的 UUID，这是最可靠的方式
-ROOT_UUID=$(blkid -s UUID -o value "${ROOT_PART}")
+ROOT_UUID=$(blkid -s UUID -o value "${ROOT_PART}") || print_error "获取根分区 UUID 失败！"
 print_info "检测到根分区的 UUID 为: $ROOT_UUID"
 
 # 创建 grub.cfg
@@ -147,19 +178,25 @@ menuentry "ImmortalWrt" {
     initrd /boot/initrd.img
 }
 EOF
-
-print_info "grub.cfg 文件内容:"
-cat "${MOUNT_POINT}/boot/grub/grub.cfg"
+print_success "GRUB 配置文件已生成。"
+echo ""
 
 # 10. 清理
-print_info "正在卸载分区..."
-umount "${MOUNT_POINT}/boot/efi"
-umount "${MOUNT_POINT}"
-rmdir "${MOUNT_POINT}"
+print_info "清理中: 卸载分区..."
+umount "${MOUNT_POINT}/boot/efi" || print_warning "卸载 EFI 分区失败，请手动检查。"
+umount "${MOUNT_POINT}" || print_warning "卸载根分区失败，请手动检查。"
+rmdir "${MOUNT_POINT}" 2>/dev/null || true # 忽略目录非空错误
+print_success "清理完成。"
+echo ""
 
 print_success "****************************************************************"
 print_success "ImmortalWrt 安装成功!"
 print_success "请移除安装介质，然后重启您的计算机。"
+print_success ""
+print_info "首次启动后，您可能需要通过网线连接设备。"
+print_info "默认情况下，ImmortalWrt 的 LAN 口 IP 地址通常是 192.168.1.1。"
+print_info "您可以通过浏览器访问此 IP 地址来登录 LuCI Web 界面。"
+print_info "默认用户名通常是 'root'，无密码。"
 print_success "****************************************************************"
 
 exit 0
