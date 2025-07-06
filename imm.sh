@@ -27,7 +27,7 @@ echo "下载文件: $FILE_NAME -> $OUTPUT_PATH"
 curl -L -o "$OUTPUT_PATH" "$DOWNLOAD_URL"
 
 if [[ $? -eq 0 ]]; then
-  echo "下载immortalwrt-24.10.1成功!"
+  echo "下载immortalwrt-24.10.2成功!"
   file imm/immortalwrt.img.gz
   echo "正在解压为:immortalwrt.img"
   gzip -d imm/immortalwrt.img.gz
