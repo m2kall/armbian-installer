@@ -9,7 +9,8 @@ FILE_NAME="immortalwrt-24.10.2-x86-64-generic-ext4-combined-efi.img.gz"
 OUTPUT_PATH="imm/immortalwrt.img.gz"
 UNZIPPED_IMG_PATH="imm/immortalwrt.img"
 
-DOWNLOAD_URL=$(curl -s https://api.github.com/repos/$REPO/releases/tags/$TAG | jq -r '.assets[] | select(.name == "''"$FILE_NAME"''") | .browser_download_url')
+# 【重要修正】使用 jq --arg 来安全地传递 shell 变量，避免引号问题
+DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/tags/$TAG" | jq --arg name "$FILE_NAME" -r '.assets[] | select(.name == $name) | .browser_download_url')
 
 if [[ -z "$DOWNLOAD_URL" ]]; then
   echo "错误：在 Release 中未找到文件 $FILE_NAME"
@@ -25,13 +26,11 @@ if [[ $? -eq 0 ]]; then
   file "$OUTPUT_PATH"
   
   echo "正在解压文件: $OUTPUT_PATH"
-  # 【重要修正】使用正确的文件名进行解压
   gzip -d "$OUTPUT_PATH"
   
   echo "解压完成。imm/ 目录内容:"
   ls -lh imm/
 
-  # 检查解压后的文件是否存在
   if [ ! -f "$UNZIPPED_IMG_PATH" ]; then
       echo "错误：解压失败，未找到预期的文件 $UNZIPPED_IMG_PATH"
       exit 1
@@ -45,6 +44,6 @@ if [[ $? -eq 0 ]]; then
         debian:buster \
         /supportFiles/immortalwrt/build.sh
 else
-  echo "下载失败!"
+  echo "下载失败！"
   exit 1
 fi
