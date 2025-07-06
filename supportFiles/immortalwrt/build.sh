@@ -98,6 +98,6 @@ xorriso \
     "${HOME}/LIVE_BOOT/staging"
 
 echo Copy output
-cp -v $HOME/LIVE_BOOT/debian-custom.iso /output/immortalwrt-installer-x86_64.iso
-chmod -v 666 /output/immortalwrt-installer-x86_64.iso
+cp -v $HOME/LIVE_BOOT/debian-custom.iso /output/immortalwrt-installer-generic-squashfs-combined-x86_64.iso
+chmod -v 666 /output/immortalwrt-installer-generic-squashfs-combined-x86_64.iso
 ls -lah /output
