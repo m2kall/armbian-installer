@@ -1,7 +1,7 @@
 #!/bin/bash
 mkdir -p openwrt
 
-REPO="wukongdaily/img-installer"
+REPO="m2kall/img-installer"
 TAG="2025-03-12"
 FILE_NAME="istoreos-24.10.1-2025060614-x86-64-squashfs-combined-efi.img.gz"
 OUTPUT_PATH="openwrt/istoreos.img.gz"
