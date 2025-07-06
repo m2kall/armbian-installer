@@ -7,6 +7,9 @@
 #### 默认软件包大小 1GB 
 #### 默认带docker
 #### 下列属性刷机前必读
+#### generic-ext4-combined-efi使用dd安装
+#### generic-squashfs-combined-efi使用ddd安装
+
 
 - 该固件刷入【单网口设备】默认采用DHCP模式,自动获得ip。类似NAS的做法
 - 该固件刷入【多网口设备】默认WAN口采用DHCP模式，LAN 口ip为 192.168.100.1
