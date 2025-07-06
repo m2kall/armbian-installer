@@ -7,8 +7,6 @@
 #### 默认软件包大小 1GB 
 #### 默认带docker
 #### 下列属性刷机前必读
-#### generic-ext4-combined-efi使用dd安装
-#### generic-squashfs-combined-efi使用ddd安装
 
 ---
 
