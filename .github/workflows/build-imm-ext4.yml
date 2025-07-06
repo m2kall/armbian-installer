@@ -28,5 +28,5 @@ jobs:
           tag_name: "ImmortalWrt-Installer-x86_64-ISO"
           body_path: ${{ github.workspace }}/supportFiles/immortalwrt/info.md
           files: |
-            output/immortalwrt-installer-x86_64.iso
+            output/immortalwrt-installer-generic-ext4-combined-x86_64.iso
           token: ${{ secrets.GITHUB_TOKEN }}
