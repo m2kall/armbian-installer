@@ -3,7 +3,7 @@
 show_menu() {
     clear
     echo "====================================="
-    echo "  Armbian x86-UEFI Installer by wukongdaily"
+    echo "  Armbian x86-UEFI Installer by m2kall"
     echo "====================================="
     echo "1. Install Armbian x86-UEFI"
     echo "0. Quit"
