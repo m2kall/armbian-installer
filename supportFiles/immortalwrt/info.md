@@ -10,7 +10,7 @@
 #### generic-ext4-combined-efi使用dd安装
 #### generic-squashfs-combined-efi使用ddd安装
 
-··········································
+---
 
 
 - 该固件刷入【单网口设备】默认采用DHCP模式,自动获得ip。类似NAS的做法
