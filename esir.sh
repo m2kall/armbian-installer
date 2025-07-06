@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO="wkccd/esirOpenWrt"
+REPO="m2kall/esirOpenWrt"
 TAG=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" | jq -r '.tag_name // empty')
 [ -z "$TAG" ] && TAG=$(curl -sL "https://api.github.com/repos/$REPO/tags" | jq -r '.[0].name')
 echo "最新TAG: $TAG"
