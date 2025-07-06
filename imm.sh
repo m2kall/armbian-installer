@@ -11,9 +11,9 @@ DOWNLOAD_URL=$(curl -s https://api.github.com/repos/$REPO/releases/tags/$TAG | j
 
 # 此处可以替换op固件下载地址,但必须是 直链才可以,网盘那种地址是不行滴。举3个例子
 # 原版OpenWrt
-# DOWNLOAD_URL="https://downloads.openwrt.org/releases/24.10.0/targets/x86/64/openwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img.gz"
+# DOWNLOAD_URL="https://downloads.openwrt.org/releases/24.10.2/targets/x86/64/openwrt-24.10.2-x86-64-generic-squashfs-combined-efi.img.gz"
 # 原版immortalwrt
-# DOWNLOAD_URL="https://downloads.immortalwrt.org/releases/24.10.0/targets/x86/64/immortalwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img.gz"
+# DOWNLOAD_URL="https://downloads.immortalwrt.org/releases/24.10.2/targets/x86/64/immortalwrt-24.10.2-x86-64-generic-squashfs-combined-efi.img.gz"
 # 原版KWRT
 # DOWNLOAD_URL="https://dl.openwrt.ai/releases/24.10/targets/x86/64/kwrt-03.08.2025-x86-64-generic-squashfs-combined-efi.img.gz"
 
