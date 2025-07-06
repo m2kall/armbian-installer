@@ -54,6 +54,6 @@ docker run --privileged --rm \
       -v "$(pwd)/supportFiles:/supportFiles:ro" \
       -v "$(pwd)/$UNZIPPED_IMG_PATH:/mnt/immortalwrt.img" \
       debian:buster \
-      /supportFiles/immortalwrt/build.sh
+      /supportFiles/immortalwrt/build-ext4.sh
 
 echo "所有步骤成功完成!"
