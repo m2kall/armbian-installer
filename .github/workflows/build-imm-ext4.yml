@@ -1,4 +1,4 @@
-name: "Build ImmortalWrt Installer ISO"
+name: "Build ImmortalWrt Installer 24.10.2-ext4 ISO"
 
 on:
  workflow_dispatch:
