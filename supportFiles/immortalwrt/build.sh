@@ -1,5 +1,5 @@
 #!/bin/bash
-# Based from https://willhaley.com/blog/custom-debian-live-environment/
+
 
 echo Install required tools
 apt-get update
