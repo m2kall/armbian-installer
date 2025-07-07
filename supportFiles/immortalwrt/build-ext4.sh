@@ -1,110 +1,115 @@
 #!/bin/bash
 
-echo "Install required tools"
-apt-get update
-apt-get -y install debootstrap xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools dosfstools parted
-
-echo "Create working directory"
-mkdir -p "$HOME/LIVE_BOOT"
-
-echo "Install Debian"
-debootstrap --arch=amd64 --variant=minbase buster "$HOME/LIVE_BOOT/chroot" http://ftp.us.debian.org/debian/
-
-echo "Copy supporting files into chroot"
-cp -v /supportFiles/installChroot.sh "$HOME/LIVE_BOOT/chroot/installChroot.sh"
-cp -v /supportFiles/immortalwrt/ddd "$HOME/LIVE_BOOT/chroot/usr/bin/ddd"
-chmod +x "$HOME/LIVE_BOOT/chroot/usr/bin/ddd"
-cp -v /supportFiles/sources.list "$HOME/LIVE_BOOT/chroot/etc/apt/sources.list"
-
-echo "Mount dev / proc / sys"
-mount -t proc none "$HOME/LIVE_BOOT/chroot/proc"
-mount -o bind /dev "$HOME/LIVE_BOOT/chroot/dev"
-mount -o bind /sys "$HOME/LIVE_BOOT/chroot/sys"
-
-echo "Run install script inside chroot"
-chroot "$HOME/LIVE_BOOT/chroot" /installChroot.sh
-
-echo "Cleanup chroot"
-rm -v "$HOME/LIVE_BOOT/chroot/installChroot.sh"
-mv -v "$HOME/LIVE_BOOT/chroot"/packages.txt /output/packages.txt
-
-echo "Copy network configuration"
-cp -v /supportFiles/99-dhcp-en.network "$HOME/LIVE_BOOT/chroot/etc/systemd/network/99-dhcp-en.network"
-chown -v root:root "$HOME/LIVE_BOOT/chroot/etc/systemd/network/99-dhcp-en.network"
-chmod -v 644 "$HOME/LIVE_BOOT/chroot/etc/systemd/network/99-dhcp-en.network"
-
-echo "Enable autologin"
-mkdir -p -v "$HOME/LIVE_BOOT/chroot/etc/systemd/system/getty@tty1.service.d/"
-cp -v /supportFiles/override.conf "$HOME/LIVE_BOOT/chroot/etc/systemd/system/getty@tty1.service.d/override.conf"
-
-echo "Unmount dev / proc / sys"
-umount "$HOME/LIVE_BOOT/chroot/proc"
-umount "$HOME/LIVE_BOOT/chroot/dev"
-umount "$HOME/LIVE_BOOT/chroot/sys"
-
-echo "Create directories for live environment"
-mkdir -p "$HOME/LIVE_BOOT"/{staging/{EFI/boot,boot/grub/x86_64-efi,isolinux,live},tmp}
-
-# ------------------ 改动部分：用ext4镜像替代squashfs ------------------
-
-# 1. 创建ext4镜像文件
-EXT4_IMG="$HOME/LIVE_BOOT/staging/live/filesystem.img"
-dd if=/dev/zero of="$EXT4_IMG" bs=1G count=2  # 根据需要调整大小
-/sbin/mkfs.ext4 "$EXT4_IMG"
-
-# 2. 挂载ext4镜像
+# 设置变量
+WORKDIR="$HOME/LIVE_BOOT"
+ISO_OUTPUT="$WORKDIR/debian-custom.iso"
+EXT4_IMG="$WORKDIR/staging/live/filesystem.img"
 MOUNT_PT="/mnt/ext4"
-mkdir -p "$MOUNT_PT"
+
+# 1. 安装必要工具
+sudo apt-get update
+sudo apt-get -y install debootstrap xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools dosfstools parted
+
+# 2. 创建工作目录
+mkdir -p "$WORKDIR"
+
+# 3. 安装Debian到chroot
+debootstrap --arch=amd64 --variant=minbase buster "$WORKDIR/chroot" http://ftp.us.debian.org/debian/
+
+# 4. 复制支持文件
+cp -v /supportFiles/installChroot.sh "$WORKDIR/chroot"
+cp -v /supportFiles/immortalwrt/ddd "$WORKDIR/chroot/usr/bin/"
+chmod +x "$WORKDIR/chroot/usr/bin/ddd"
+cp -v /supportFiles/sources.list "$WORKDIR/chroot/etc/apt/sources.list"
+
+# 5. 挂载必要的虚拟文件系统
+sudo mount -t proc none "$WORKDIR/chroot/proc"
+sudo mount --bind /dev "$WORKDIR/chroot/dev"
+sudo mount --bind /sys "$WORKDIR/chroot/sys"
+
+# 6. 运行安装脚本
+sudo chroot "$WORKDIR/chroot" /installChroot.sh
+
+# 7. 清理
+rm -v "$WORKDIR/chroot/installChroot.sh"
+mv -v "$WORKDIR/chroot"/packages.txt /output/packages.txt
+
+# 8. 配置网络和autologin
+cp -v /supportFiles/99-dhcp-en.network "$WORKDIR/chroot/etc/systemd/network/"
+chown root:root "$WORKDIR/chroot/etc/systemd/network/99-dhcp-en.network"
+chmod 644 "$WORKDIR/chroot/etc/systemd/network/99-dhcp-en.network"
+
+mkdir -p "$WORKDIR/chroot/etc/systemd/system/getty@tty1.service.d/"
+cp -v /supportFiles/override.conf "$WORKDIR/chroot/etc/systemd/system/getty@tty1.service.d/"
+
+# 9. 卸载虚拟文件系统
+sudo umount "$WORKDIR/chroot/proc"
+sudo umount "$WORKDIR/chroot/dev"
+sudo umount "$WORKDIR/chroot/sys"
+
+# 10. 创建目录结构
+mkdir -p "$WORKDIR"/{staging/{EFI/boot,boot/grub/x86_64-efi,isolinux,live},tmp}
+
+# --------- 关键：创建ext4镜像并复制内容 ---------
+echo "Creating ext4 filesystem image..."
+# 调整大小，比如2G
+dd if=/dev/zero of="$EXT4_IMG" bs=1G count=2
+sudo mkfs.ext4 "$EXT4_IMG"
+
+echo "Mounting ext4 image..."
+sudo mkdir -p "$MOUNT_PT"
 sudo mount -o loop "$EXT4_IMG" "$MOUNT_PT"
 
-# 3. 复制chroot内容到挂载点
-sudo cp -a "$HOME/LIVE_BOOT/chroot"/* "$MOUNT_PT"/
+echo "Copying chroot content into ext4 image..."
+sudo cp -a "$WORKDIR/chroot"/* "$MOUNT_PT"/
 
-# 4. 卸载ext4
+echo "Unmounting ext4 image..."
 sudo umount "$MOUNT_PT"
 
-# 5. 在ISO中引用这个ext4镜像
-#（后续你可以在ISO配置中挂载这个ext4文件）
+# 11. 复制内核和initrd
+cp -v "$WORKDIR/chroot"/boot/vmlinuz-* "$WORKDIR/staging/live/vmlinuz"
+cp -v "$WORKDIR/chroot"/boot/initrd.img-* "$WORKDIR/staging/live/initrd"
 
-# -------------- 其他流程保持不变 ------------------
+# 12. 复制引导配置文件
+cp -v /supportFiles/immortalwrt/isolinux.cfg "$WORKDIR/staging/isolinux/isolinux.cfg"
+cp -v /supportFiles/immortalwrt/grub.cfg "$WORKDIR/staging/boot/grub/grub.cfg"
+cp -v /supportFiles/grub-standalone.cfg "$WORKDIR/tmp/grub-standalone.cfg"
+touch "$WORKDIR/staging/DEBIAN_CUSTOM"
 
-echo "Copy kernel and initrd"
-cp -v "$HOME/LIVE_BOOT/chroot"/boot/vmlinuz-* "$HOME/LIVE_BOOT/staging/live/vmlinuz"
-cp -v "$HOME/LIVE_BOOT/chroot"/boot/initrd.img-* "$HOME/LIVE_BOOT/staging/live/initrd"
+# 13. 复制引导镜像
+cp -v /usr/lib/ISOLINUX/isolinux.bin "$WORKDIR/staging/isolinux/"
+cp -v /usr/lib/syslinux/modules/bios/* "$WORKDIR/staging/isolinux/"
+cp -v -r /usr/lib/grub/x86_64-efi/* "$WORKDIR/staging/boot/grub/x86_64-efi/"
 
-echo "Copy boot config files"
-cp -v /supportFiles/immortalwrt/isolinux.cfg "$HOME/LIVE_BOOT/staging/isolinux/isolinux.cfg"
-cp -v /supportFiles/immortalwrt/grub.cfg "$HOME/LIVE_BOOT/staging/boot/grub/grub.cfg"
-cp -v /supportFiles/grub-standalone.cfg "$HOME/LIVE_BOOT/tmp/grub-standalone.cfg"
-touch "$HOME/LIVE_BOOT/staging/DEBIAN_CUSTOM"
+# 14. 生成UEFI启动文件
+grub-mkstandalone --format=x86_64-efi --output="$WORKDIR/tmp/bootx64.efi" --locales="" --fonts="" "boot/grub/grub.cfg=$WORKDIR/tmp/grub-standalone.cfg"
 
-echo "Copy boot images"
-cp -v /usr/lib/ISOLINUX/isolinux.bin "$HOME/LIVE_BOOT/staging/isolinux/"
-cp -v /usr/lib/syslinux/modules/bios/* "$HOME/LIVE_BOOT/staging/isolinux/"
-cp -v -r /usr/lib/grub/x86_64-efi/* "$HOME/LIVE_BOOT/staging/boot/grub/x86_64-efi/"
-
-echo "Make UEFI grub files"
-grub-mkstandalone --format=x86_64-efi --output="$HOME/LIVE_BOOT/tmp/bootx64.efi" --locales="" --fonts="" "boot/grub/grub.cfg=$HOME/LIVE_BOOT/tmp/grub-standalone.cfg"
-
-# UEFI引导文件的创建和挂载
-cd "$HOME/LIVE_BOOT/staging/EFI/boot"
-SIZE=$(expr $(stat --format=%s "$HOME/LIVE_BOOT/tmp/bootx64.efi") + 65536)
+# 15. 创建EFI引导镜像
+cd "$WORKDIR/staging/EFI/boot"
+SIZE=$(expr $(stat --format=%s "$WORKDIR/tmp/bootx64.efi") + 65536)
 dd if=/dev/zero of=efiboot.img bs=$SIZE count=1
 /sbin/mkfs.vfat efiboot.img
 mmd -i efiboot.img efi efi/boot
-mcopy -vi efiboot.img "$HOME/LIVE_BOOT/tmp/bootx64.efi" ::efi/boot/
+mcopy -vi efiboot.img "$WORKDIR/tmp/bootx64.efi" ::efi/boot/
 
-# -------------- 最后：制作ISO ------------------
-echo "Build ISO"
+# --------- 重要：在ISO引导中挂载ext4镜像 ---------
+# 你需要在ISO的initrd中加入挂载ext4的指令，示例（在initrd中加入）：
+#   mount -o loop /path/to/filesystem.img /mnt
+#   进行系统根目录切换或使用
+#
+# 这里在脚本中不做自动挂载，只提供镜像文件
+# 在ISO的initrd中配置挂载脚本，确保系统启动后能挂载使用
+
+# 16. 生成ISO镜像
+echo "Building ISO..."
 xorriso \
     -as mkisofs \
     -iso-level 3 \
-    -o "$HOME/LIVE_BOOT/debian-custom.iso" \
+    -o "$ISO_OUTPUT" \
     -full-iso9660-filenames \
     -volid "DEBIAN_CUSTOM" \
     -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
-    -eltorito-boot \
-        isolinux/isolinux.bin \
+    -eltorito-boot isolinux/isolinux.bin \
         -no-emul-boot \
         -boot-load-size 4 \
         -boot-info-table \
@@ -113,10 +118,8 @@ xorriso \
         -e /EFI/boot/efiboot.img \
         -no-emul-boot \
         -isohybrid-gpt-basdat \
-    -append_partition 2 0xef "$HOME/LIVE_BOOT/staging/EFI/boot/efiboot.img" \
-    "$HOME/LIVE_BOOT/staging"
+    -append_partition 2 0xef "$WORKDIR/staging/EFI/boot/efiboot.img" \
+    "$WORKDIR/staging"
 
-echo "Copy output"
-cp -v "$HOME/LIVE_BOOT/debian-custom.iso" /output/immortalwrt-installer-generic-ext4-combined-x86_64.iso
-chmod -v 666 /output/immortalwrt-installer-generic-ext4-combined-x86_64.iso
-ls -lah /output
+echo "Done. ISO located at: $ISO_OUTPUT"
+ls -l "$ISO_OUTPUT"
