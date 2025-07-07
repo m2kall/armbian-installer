@@ -45,4 +45,4 @@ docker run --privileged --rm \
         -v $(pwd)/supportFiles:/supportFiles:ro \
         -v $(pwd)/imm/immortalwrt.img:/mnt/immortalwrt.img \
         debian:buster \
-        /supportFiles/immortalwrt/build.sh
+        /supportFiles/immortalwrt/build-ext4.sh
