@@ -8,7 +8,7 @@ MOUNT_PT="/mnt/ext4"
 
 # 1. 安装必要工具
 sudo apt-get update
-sudo apt-get -y install debootstrap xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools dosfstools parted
+sudo apt-get -y install debootstrap xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools dosfstools parted grub-mkstandalone
 
 # 2. 创建工作目录
 mkdir -p "$WORKDIR"
