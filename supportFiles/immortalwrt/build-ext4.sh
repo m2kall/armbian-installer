@@ -123,3 +123,8 @@ xorriso \
 
 echo "Done. ISO located at: $ISO_OUTPUT"
 ls -l "$ISO_OUTPUT"
+
+echo Copy output
+cp -v $HOME/LIVE_BOOT/debian-custom.iso /output/immortalwrt-installer-generic-ext4-combined-x86_64.iso
+chmod -v 666 /output/immortalwrt-installer-generic-ext4-combined-x86_64.iso
+ls -lah /output
